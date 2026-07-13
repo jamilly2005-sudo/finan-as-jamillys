@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Travessia Financeira</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --paper: #F6F1E7;
+    --paper-dim: #EFE8D9;
+    --ink: #202B3D;
+    --ink-soft: #4A5468;
+    --gold: #A9782F;
+    --gold-soft: #D8C08A;
+    --green: #33513B;
+    --green-soft: #DCE6DD;
+    --red: #8B3A3A;
+    --red-soft: #EEDCDA;
+    --line: #D9CFC0;
+    --white: #FFFDF9;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{max-width:920px;margin:0 auto;padding:32px 20px 80px;}
+
+  /* Header */
+  header{margin-bottom:28px;}
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--gold);
+    margin-bottom:6px;
+  }
+  h1{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:32px;
+    margin:0 0 4px;
+    letter-spacing:-.01em;
+  }
+  .subtitle{color:var(--ink-soft);font-size:14px;}
+
+  /* Month selector */
+  .month-bar{
+    display:flex;align-items:center;gap:10px;margin:20px 0 24px;
+    font-family:'IBM Plex Mono',monospace;font-size:13px;
+  }
+  .month-bar button{
+    background:none;border:1px solid var(--line);border-radius:6px;
+    width:28px;height:28px;cursor:pointer;color:var(--ink);font-size:14px;
+  }
+  .month-bar button:hover{border-color:var(--gold);color:var(--gold);}
+  .month-label{font-weight:600;text-transform:capitalize;}
+
+  /* Trilha signature element */
+  .trilha{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:26px 24px 22px;
+    margin-bottom:28px;
+    position:relative;
+    overflow:hidden;
+  }
+  .trilha-title{
+    font-family:'Fraunces',serif;font-size:15px;font-weight:600;
+    color:var(--ink-soft);margin-bottom:18px;
+  }
+  .trilha-flow{
+    display:flex;align-items:stretch;gap:0;overflow-x:auto;
+    padding-bottom:6px;
+  }
+  .trilha-node{
+    flex:1;min-width:118px;padding:0 14px;position:relative;
+  }
+  .trilha-node:not(:last-child)::after{
+    content:'';position:absolute;top:22px;right:-2px;width:14px;height:1px;
+    background:var(--line);
+  }
+  .trilha-node-label{
+    font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;
+    letter-spacing:.08em;color:var(--ink-soft);margin-bottom:8px;white-space:nowrap;
+  }
+  .trilha-node-value{
+    font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:17px;
+  }
+  .trilha-node.receita .trilha-node-value{color:var(--ink);}
+  .trilha-node.dizimo .trilha-node-value,
+  .trilha-node.reserva .trilha-node-value,
+  .trilha-node.fgts .trilha-node-value{color:var(--gold);}
+  .trilha-node.contas .trilha-node-value{color:var(--red);}
+  .trilha-node.livre .trilha-node-value{color:var(--green);}
+  .trilha-node.livre .trilha-node-label{color:var(--green);}
+
+  /* Tabs */
+  .tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--line);}
+  .tab{
+    font-family:'IBM Plex Mono',monospace;font-size:12.5px;
+    padding:10px 16px;cursor:pointer;color:var(--ink-soft);
+    border-bottom:2px solid transparent;margin-bottom:-1px;
+    background:none;border-top:none;border-left:none;border-right:none;
+    text-transform:uppercase;letter-spacing:.04em;
+  }
+  .tab.active{color:var(--ink);border-bottom-color:var(--gold);font-weight:600;}
+  .tab:hover:not(.active){color:var(--ink);}
+
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  /* Cards */
+  .card{
+    background:var(--white);border:1px solid var(--line);border-radius:10px;
+    padding:20px;margin-bottom:16px;
+  }
+  .card-title{
+    font-family:'Fraunces',serif;font-size:16px;font-weight:600;margin:0 0 14px;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .row-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  @media(max-width:600px){.row-grid{grid-template-columns:1fr;}}
+
+  label{font-size:12px;color:var(--ink-soft);display:block;margin-bottom:4px;}
+  input[type=text],input[type=number],input[type=date],select{
+    width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:6px;
+    font-family:'Inter',sans-serif;font-size:14px;background:var(--paper);color:var(--ink);
+  }
+  input:focus,select:focus{outline:none;border-color:var(--gold);}
+
+  .btn{
+    font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:500;
+    padding:9px 16px;border-radius:6px;border:1px solid var(--ink);
+    background:var(--ink);color:var(--paper);cursor:pointer;letter-spacing:.02em;
+  }
+  .btn:hover{opacity:.85;}
+  .btn.secondary{background:none;color:var(--ink);border-color:var(--line);}
+  .btn.danger{background:none;color:var(--red);border-color:var(--red-soft);}
+  .btn.small{padding:5px 10px;font-size:11px;}
+
+  /* Transaction list */
+  .tx-item{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:11px 0;border-bottom:1px solid var(--paper-dim);
+  }
+  .tx-item:last-child{border-bottom:none;}
+  .tx-left{display:flex;flex-direction:column;gap:2px;}
+  .tx-desc{font-size:14px;font-weight:500;}
+  .tx-meta{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);}
+  .tx-amount{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px;}
+  .tx-amount.receita{color:var(--green);}
+  .tx-amount.gasto{color:var(--red);}
+  .tx-del{background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:16px;padding:0 4px;margin-left:10px;}
+  .tx-del:hover{color:var(--red);}
+
+  /* Fixed bills */
+  .bill-item{
+    display:flex;align-items:center;gap:12px;padding:11px 0;
+    border-bottom:1px solid var(--paper-dim);
+  }
+  .bill-item:last-child{border-bottom:none;}
+  .bill-check{width:18px;height:18px;cursor:pointer;accent-color:var(--green);}
+  .bill-info{flex:1;}
+  .bill-name{font-size:14px;font-weight:500;}
+  .bill-name.paid{text-decoration:line-through;color:var(--ink-soft);}
+  .bill-due{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);}
+  .bill-amount{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px;}
+
+  /* Goals */
+  .goal-item{margin-bottom:18px;}
+  .goal-item:last-child{margin-bottom:0;}
+  .goal-head{display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px;}
+  .goal-name{font-weight:500;}
+  .goal-figures{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-soft);}
+  .goal-bar-track{background:var(--paper-dim);border-radius:20px;height:10px;overflow:hidden;}
+  .goal-bar-fill{background:var(--gold);height:100%;border-radius:20px;transition:width .4s ease;}
+
+  .empty{text-align:center;color:var(--ink-soft);font-size:13px;padding:20px 0;}
+
+  .settings-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--paper-dim);}
+  .settings-row:last-child{border-bottom:none;}
+  .pct-input{width:70px;text-align:right;}
+
+  .toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+    background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:8px;
+    font-family:'IBM Plex Mono',monospace;font-size:12.5px;opacity:0;pointer-events:none;
+    transition:opacity .3s ease;z-index:100;
+  }
+  .toast.show{opacity:1;}
+
+  .loading{text-align:center;padding:60px 0;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;font-size:13px;}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="loading" id="loadingScreen">carregando sua travessia financeira…</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const STORAGE_KEY = 'travessia-financeira-dados';
+
+let state = {
+  transactions: [], // {id, date, type:'receita'|'gasto', category, description, amount}
+  fixedBills: [],   // {id, name, amount, dueDay, paidMonths: ['2026-07', ...]}
+  goals: [],        // {id, name, target, current}
+  debts: [],        // {id, person, amount, direction:'devo'|'me_devem', note, settled}
+  settings: { dizimoPct: 10, reservaPct: 10, fgtsPct: 10 }
+};
+
+let currentMonth = new Date();
+let activeTab = 'dashboard';
+
+function monthKey(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+function fmt(n){
+  return (n<0?'-':'') + 'R$ ' + Math.abs(n).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+async function loadState(){
+  try{
+    const res = await window.storage.get(STORAGE_KEY, false);
+    if(res && res.value){
+      const parsed = JSON.parse(res.value);
+      state = Object.assign(state, parsed);
+    }
+  }catch(e){
+    console.log('Nenhum dado salvo ainda, começando do zero.');
+  }
+}
+
+async function saveState(){
+  try{
+    const result = await window.storage.set(STORAGE_KEY, JSON.stringify(state), false);
+    if(!result){ showToast('⚠ não foi possível salvar agora'); }
+  }catch(e){
+    console.error('Erro ao salvar:', e);
+    showToast('⚠ erro ao salvar os dados');
+  }
+}
+
+function getMonthTransactions(){
+  const mk = monthKey(currentMonth);
+  return state.transactions.filter(t => t.date.slice(0,7) === mk);
+}
+
+function calcTrilha(){
+  const txs = getMonthTransactions();
+  const receita = txs.filter(t=>t.type==='receita').reduce((s,t)=>s+t.amount,0);
+  const dizimo = receita * (state.settings.dizimoPct/100);
+  const reserva = receita * (state.settings.reservaPct/100);
+  const fgts = receita * (state.settings.fgtsPct/100);
+  const gastosLancados = txs.filter(t=>t.type==='gasto').reduce((s,t)=>s+t.amount,0);
+  const mk = monthKey(currentMonth);
+  const contasFixas = state.fixedBills.reduce((s,b)=> s + (b.paidMonths.includes(mk)?0:b.amount), 0);
+  const livre = receita - dizimo - reserva - fgts - gastosLancados - contasFixas;
+  return {receita, dizimo, reserva, fgts, gastosLancados, contasFixas, livre};
+}
+
+function render(){
+  const app = document.getElementById('app');
+  const t = calcTrilha();
+
+  app.innerHTML = `
+    <header>
+      <div class="eyebrow">Travessia Financeira · Jamilly</div>
+      <h1>Como está sua vida financeira</h1>
+      <div class="subtitle">Receita PJ organizada por prioridade: dízimo, reserva, FGTS pessoal e o que sobra livre.</div>
+    </header>
+
+    <div class="month-bar">
+      <button onclick="changeMonth(-1)">‹</button>
+      <span class="month-label">${MONTHS[currentMonth.getMonth()]} ${currentMonth.getFullYear()}</span>
+      <button onclick="changeMonth(1)">›</button>
+    </div>
+
+    <div class="trilha">
+      <div class="trilha-title">Rota do mês</div>
+      <div class="trilha-flow">
+        <div class="trilha-node receita">
+          <div class="trilha-node-label">Receita</div>
+          <div class="trilha-node-value">${fmt(t.receita)}</div>
+        </div>
+        <div class="trilha-node dizimo">
+          <div class="trilha-node-label">Dízimo (${state.settings.dizimoPct}%)</div>
+          <div class="trilha-node-value">${fmt(t.dizimo)}</div>
+        </div>
+        <div class="trilha-node reserva">
+          <div class="trilha-node-label">Reserva (${state.settings.reservaPct}%)</div>
+          <div class="trilha-node-value">${fmt(t.reserva)}</div>
+        </div>
+        <div class="trilha-node fgts">
+          <div class="trilha-node-label">FGTS pessoal (${state.settings.fgtsPct}%)</div>
+          <div class="trilha-node-value">${fmt(t.fgts)}</div>
+        </div>
+        <div class="trilha-node contas">
+          <div class="trilha-node-label">Contas fixas</div>
+          <div class="trilha-node-value">${fmt(t.contasFixas)}</div>
+        </div>
+        <div class="trilha-node livre">
+          <div class="trilha-node-label">Livre para gastar</div>
+          <div class="trilha-node-value">${fmt(t.livre)}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab ${activeTab==='dashboard'?'active':''}" onclick="setTab('dashboard')">Resumo</button>
+      <button class="tab ${activeTab==='transacoes'?'active':''}" onclick="setTab('transacoes')">Transações</button>
+      <button class="tab ${activeTab==='contas'?'active':''}" onclick="setTab('contas')">Contas fixas</button>
+      <button class="tab ${activeTab==='metas'?'active':''}" onclick="setTab('metas')">Metas</button>
+      <button class="tab ${activeTab==='dividas'?'active':''}" onclick="setTab('dividas')">Dívidas</button>
+      <button class="tab ${activeTab==='config'?'active':''}" onclick="setTab('config')">Config</button>
+    </div>
+
+    <div id="panels"></div>
+  `;
+
+  renderPanel(t);
+}
+
+function renderPanel(t){
+  const panels = document.getElementById('panels');
+  if(activeTab === 'dashboard') panels.innerHTML = renderDashboard(t);
+  else if(activeTab === 'transacoes') panels.innerHTML = renderTransacoes();
+  else if(activeTab === 'contas') panels.innerHTML = renderContas();
+  else if(activeTab === 'metas') panels.innerHTML = renderMetas();
+  else if(activeTab === 'dividas') panels.innerHTML = renderDividas();
+  else if(activeTab === 'config') panels.innerHTML = renderConfig();
+}
+
+function renderDashboard(t){
+  const gastosDiscricionarios = getMonthTransactions().filter(x=>x.type==='gasto').slice(-5).reverse();
+  const billsPending = state.fixedBills.filter(b=>!b.paidMonths.includes(monthKey(currentMonth)));
+
+  return `
+    <div class="card">
+      <div class="card-title">Saldo livre disponível</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:28px;font-weight:600;color:${t.livre>=0?'var(--green)':'var(--red)'}">
+        ${fmt(t.livre)}
+      </div>
+      <div style="font-size:13px;color:var(--ink-soft);margin-top:6px;">
+        Depois de separar dízimo, reserva de emergência, FGTS pessoal e contas fixas do mês.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Contas fixas pendentes este mês</div>
+      ${billsPending.length===0 ? '<div class="empty">Tudo pago ou nenhuma conta cadastrada.</div>' :
+        billsPending.map(b=>`
+          <div class="bill-item">
+            <div class="bill-info">
+              <div class="bill-name">${b.name}</div>
+              <div class="bill-due">vence dia ${b.dueDay}</div>
+            </div>
+            <div class="bill-amount">${fmt(b.amount)}</div>
+          </div>
+        `).join('')}
+    </div>
+
+    <div class="card">
+      <div class="card-title">Últimos gastos lançados</div>
+      ${gastosDiscricionarios.length===0 ? '<div class="empty">Nenhum gasto lançado ainda este mês.</div>' :
+        gastosDiscricionarios.map(g=>`
+          <div class="tx-item">
+            <div class="tx-left">
+              <div class="tx-desc">${g.description||g.category}</div>
+              <div class="tx-meta">${g.category} · ${new Date(g.date+'T12:00').toLocaleDateString('pt-BR')}</div>
+            </div>
+            <div class="tx-amount gasto">-${fmt(g.amount)}</div>
+          </div>
+        `).join('')}
+    </div>
+  `;
+}
+
+function renderTransacoes(){
+  const txs = getMonthTransactions().sort((a,b)=> b.date.localeCompare(a.date));
+  return `
+    <div class="card">
+      <div class="card-title">Nova transação</div>
+      <div class="row-grid">
+        <div><label>Tipo</label>
+          <select id="txType"><option value="receita">Receita</option><option value="gasto">Gasto</option></select>
+        </div>
+        <div><label>Valor (R$)</label><input type="number" id="txAmount" step="0.01" placeholder="0,00"></div>
+        <div><label>Categoria</label><input type="text" id="txCategory" placeholder="ex: comissão, mercado, transporte"></div>
+        <div><label>Data</label><input type="date" id="txDate" value="${new Date().toISOString().slice(0,10)}"></div>
+      </div>
+      <div style="margin-top:10px;">
+        <label>Descrição (opcional)</label>
+        <input type="text" id="txDesc" placeholder="detalhe curto">
+      </div>
+      <div style="margin-top:14px;"><button class="btn" onclick="addTransaction()">Adicionar</button></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Transações do mês</div>
+      ${txs.length===0 ? '<div class="empty">Nenhuma transação neste mês ainda.</div>' :
+        txs.map(t=>`
+          <div class="tx-item">
+            <div class="tx-left">
+              <div class="tx-desc">${t.description || t.category}</div>
+              <div class="tx-meta">${t.category} · ${new Date(t.date+'T12:00').toLocaleDateString('pt-BR')}</div>
+            </div>
+            <div style="display:flex;align-items:center;">
+              <div class="tx-amount ${t.type}">${t.type==='gasto'?'-':'+'}${fmt(t.amount)}</div>
+              <button class="tx-del" onclick="deleteTransaction('${t.id}')">×</button>
+            </div>
+          </div>
+        `).join('')}
+    </div>
+  `;
+}
+
+function renderContas(){
+  const mk = monthKey(currentMonth);
+  return `
+    <div class="card">
+      <div class="card-title">Nova conta fixa</div>
+      <div class="row-grid">
+        <div><label>Nome</label><input type="text" id="billName" placeholder="ex: aluguel, internet"></div>
+        <div><label>Valor (R$)</label><input type="number" id="billAmount" step="0.01" placeholder="0,00"></div>
+        <div><label>Dia de vencimento</label><input type="number" id="billDue" min="1" max="31" placeholder="ex: 10"></div>
+      </div>
+      <div style="margin-top:14px;"><button class="btn" onclick="addBill()">Adicionar conta</button></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Contas fixas cadastradas</div>
+      ${state.fixedBills.length===0 ? '<div class="empty">Nenhuma conta fixa cadastrada.</div>' :
+        state.fixedBills.map(b=>{
+          const paid = b.paidMonths.includes(mk);
+          return `
+          <div class="bill-item">
+            <input type="checkbox" class="bill-check" ${paid?'checked':''} onchange="toggleBillPaid('${b.id}')">
+            <div class="bill-info">
+              <div class="bill-name ${paid?'paid':''}">${b.name}</div>
+              <div class="bill-due">vence dia ${b.dueDay}</div>
+            </div>
+            <div class="bill-amount">${fmt(b.amount)}</div>
+            <button class="tx-del" onclick="deleteBill('${b.id}')">×</button>
+          </div>`;
+        }).join('')}
+    </div>
+  `;
+}
+
+function renderMetas(){
+  return `
+    <div class="card">
+      <div class="card-title">Nova meta</div>
+      <div class="row-grid">
+        <div><label>Nome da meta</label><input type="text" id="goalName" placeholder="ex: viagem dos pais a Lençóis"></div>
+        <div><label>Valor alvo (R$)</label><input type="number" id="goalTarget" step="0.01" placeholder="0,00"></div>
+      </div>
+      <div style="margin-top:14px;"><button class="btn" onclick="addGoal()">Criar meta</button></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Suas metas</div>
+      ${state.goals.length===0 ? '<div class="empty">Nenhuma meta cadastrada ainda.</div>' :
+        state.goals.map(g=>{
+          const pct = g.target>0 ? Math.min(100, (g.current/g.target)*100) : 0;
+          return `
+          <div class="goal-item">
+            <div class="goal-head">
+              <span class="goal-name">${g.name}</span>
+              <button class="tx-del" onclick="deleteGoal('${g.id}')">×</button>
+            </div>
+            <div class="goal-figures">${fmt(g.current)} de ${fmt(g.target)} · ${pct.toFixed(0)}%</div>
+            <div class="goal-bar-track"><div class="goal-bar-fill" style="width:${pct}%"></div></div>
+            <div style="margin-top:8px;display:flex;gap:8px;">
+              <input type="number" id="add-${g.id}" placeholder="valor a somar" style="max-width:140px;" step="0.01">
+              <button class="btn small secondary" onclick="addToGoal('${g.id}')">Adicionar</button>
+            </div>
+          </div>`;
+        }).join('')}
+    </div>
+  `;
+}
+
+function renderDividas(){
+  const devendo = state.debts.filter(d=>d.direction==='devo' && !d.settled);
+  const meDevem = state.debts.filter(d=>d.direction==='me_devem' && !d.settled);
+  const quitadas = state.debts.filter(d=>d.settled);
+  const totalDevendo = devendo.reduce((s,d)=>s+d.amount,0);
+  const totalMeDevem = meDevem.reduce((s,d)=>s+d.amount,0);
+
+  const renderDebtItem = (d) => `
+    <div class="bill-item">
+      <div class="bill-info">
+        <div class="bill-name ${d.settled?'paid':''}">${d.person}${d.note?' · '+d.note:''}</div>
+        <div class="bill-due">${d.direction==='devo'?'você deve':'te devem'}</div>
+      </div>
+      <div class="bill-amount" style="color:${d.direction==='devo'?'var(--red)':'var(--green)'}">${fmt(d.amount)}</div>
+      ${!d.settled?`<button class="btn small secondary" onclick="settleDebt('${d.id}')" style="margin-left:10px;">Quitar</button>`:''}
+      <button class="tx-del" onclick="deleteDebt('${d.id}')">×</button>
+    </div>`;
+
+  return `
+    <div class="card">
+      <div class="card-title">Nova dívida</div>
+      <div class="row-grid">
+        <div><label>Direção</label>
+          <select id="debtDirection">
+            <option value="devo">Eu devo</option>
+            <option value="me_devem">Me devem</option>
+          </select>
+        </div>
+        <div><label>Pessoa</label><input type="text" id="debtPerson" placeholder="ex: Jeriel, Mailson"></div>
+        <div><label>Valor (R$)</label><input type="number" id="debtAmount" step="0.01" placeholder="0,00"></div>
+        <div><label>Nota (opcional)</label><input type="text" id="debtNote" placeholder="ex: ajudou a pagar o cartão"></div>
+      </div>
+      <div style="margin-top:14px;"><button class="btn" onclick="addDebt()">Adicionar</button></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Você deve <span style="font-family:'IBM Plex Mono',monospace;color:var(--red);">${fmt(totalDevendo)}</span></div>
+      ${devendo.length===0 ? '<div class="empty">Nenhuma dívida pendente.</div>' : devendo.map(renderDebtItem).join('')}
+    </div>
+
+    <div class="card">
+      <div class="card-title">Te devem <span style="font-family:'IBM Plex Mono',monospace;color:var(--green);">${fmt(totalMeDevem)}</span></div>
+      ${meDevem.length===0 ? '<div class="empty">Ninguém te deve no momento.</div>' : meDevem.map(renderDebtItem).join('')}
+    </div>
+
+    ${quitadas.length>0 ? `
+    <div class="card">
+      <div class="card-title">Quitadas</div>
+      ${quitadas.map(renderDebtItem).join('')}
+    </div>` : ''}
+  `;
+}
+
+function renderConfig(){
+  const s = state.settings;
+  return `
+    <div class="card">
+      <div class="card-title">Percentuais de separação</div>
+      <div class="settings-row">
+        <label style="margin:0;">Dízimo</label>
+        <div><input type="number" class="pct-input" id="cfgDizimo" value="${s.dizimoPct}"> %</div>
+      </div>
+      <div class="settings-row">
+        <label style="margin:0;">Reserva de emergência</label>
+        <div><input type="number" class="pct-input" id="cfgReserva" value="${s.reservaPct}"> %</div>
+      </div>
+      <div class="settings-row">
+        <label style="margin:0;">FGTS pessoal</label>
+        <div><input type="number" class="pct-input" id="cfgFgts" value="${s.fgtsPct}"> %</div>
+      </div>
+      <div style="margin-top:14px;"><button class="btn" onclick="saveConfig()">Salvar percentuais</button></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Sobre os dados</div>
+      <div style="font-size:13px;color:var(--ink-soft);line-height:1.6;">
+        Seus dados ficam salvos de forma persistente, vinculados à sua conta — não dependem do navegador
+        ou aparelho que você está usando agora.
+      </div>
+    </div>
+  `;
+}
+
+// Actions
+function changeMonth(delta){
+  currentMonth.setMonth(currentMonth.getMonth()+delta);
+  render();
+}
+function setTab(tab){ activeTab = tab; render(); }
+
+async function addTransaction(){
+  const type = document.getElementById('txType').value;
+  const amount = parseFloat(document.getElementById('txAmount').value);
+  const category = document.getElementById('txCategory').value.trim();
+  const date = document.getElementById('txDate').value;
+  const description = document.getElementById('txDesc').value.trim();
+  if(!amount || amount<=0 || !category || !date){ showToast('preencha valor, categoria e data'); return; }
+  state.transactions.push({id:uid(), date, type, category, description, amount});
+  await saveState();
+  showToast('transação adicionada');
+  render();
+}
+async function deleteTransaction(id){
+  state.transactions = state.transactions.filter(t=>t.id!==id);
+  await saveState();
+  render();
+}
+async function addBill(){
+  const name = document.getElementById('billName').value.trim();
+  const amount = parseFloat(document.getElementById('billAmount').value);
+  const dueDay = parseInt(document.getElementById('billDue').value);
+  if(!name || !amount || !dueDay){ showToast('preencha todos os campos'); return; }
+  state.fixedBills.push({id:uid(), name, amount, dueDay, paidMonths:[]});
+  await saveState();
+  showToast('conta fixa adicionada');
+  render();
+}
+async function toggleBillPaid(id){
+  const mk = monthKey(currentMonth);
+  const bill = state.fixedBills.find(b=>b.id===id);
+  if(bill.paidMonths.includes(mk)) bill.paidMonths = bill.paidMonths.filter(m=>m!==mk);
+  else bill.paidMonths.push(mk);
+  await saveState();
+  render();
+}
+async function deleteBill(id){
+  state.fixedBills = state.fixedBills.filter(b=>b.id!==id);
+  await saveState();
+  render();
+}
+async function addGoal(){
+  const name = document.getElementById('goalName').value.trim();
+  const target = parseFloat(document.getElementById('goalTarget').value);
+  if(!name || !target){ showToast('preencha nome e valor alvo'); return; }
+  state.goals.push({id:uid(), name, target, current:0});
+  await saveState();
+  showToast('meta criada');
+  render();
+}
+async function addToGoal(id){
+  const input = document.getElementById('add-'+id);
+  const val = parseFloat(input.value);
+  if(!val || val<=0) return;
+  const goal = state.goals.find(g=>g.id===id);
+  goal.current += val;
+  await saveState();
+  showToast('valor adicionado à meta');
+  render();
+}
+async function deleteGoal(id){
+  state.goals = state.goals.filter(g=>g.id!==id);
+  await saveState();
+  render();
+}
+async function addDebt(){
+  const direction = document.getElementById('debtDirection').value;
+  const person = document.getElementById('debtPerson').value.trim();
+  const amount = parseFloat(document.getElementById('debtAmount').value);
+  const note = document.getElementById('debtNote').value.trim();
+  if(!person || !amount || amount<=0){ showToast('preencha pessoa e valor'); return; }
+  state.debts.push({id:uid(), person, amount, direction, note, settled:false});
+  await saveState();
+  showToast('dívida registrada');
+  render();
+}
+async function settleDebt(id){
+  const d = state.debts.find(x=>x.id===id);
+  d.settled = true;
+  await saveState();
+  showToast('dívida marcada como quitada');
+  render();
+}
+async function deleteDebt(id){
+  state.debts = state.debts.filter(d=>d.id!==id);
+  await saveState();
+  render();
+}
+async function saveConfig(){
+  state.settings.dizimoPct = parseFloat(document.getElementById('cfgDizimo').value) || 0;
+  state.settings.reservaPct = parseFloat(document.getElementById('cfgReserva').value) || 0;
+  state.settings.fgtsPct = parseFloat(document.getElementById('cfgFgts').value) || 0;
+  await saveState();
+  showToast('percentuais salvos');
+  render();
+}
+
+// Init
+(async function init(){
+  await loadState();
+  render();
+})();
+</script>
+</body>
+</html>
